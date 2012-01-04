@@ -1,0 +1,3 @@
+lat	lon	title	description	icon	iconSize	iconOffset
+53.4277	8.480197	AKW Unterweser	<hr>Weitere Informationen: <a href="http://de.wikipedia.org/wiki/AKW_Unterweser">Wikipedia</a>	powerplant.png	32,37	-16,-35
+52.474231	7.317858	AKW Emsland	....	powerplant.png	32,37	-16,-35

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<title>Markers für OpenStreetMap-Karten mit OpenLayers</title>
+
+<script type="text/javascript"
+  src="http://dev.openlayers.org/releases/OpenLayers-2.11/OpenLayers.js"></script>
+
+<script type="text/javascript">
+  PROJECTION_4326 = new OpenLayers.Projection("EPSG:4326");
+  PROJECTION_MERC = new OpenLayers.Projection("EPSG:900913");
+
+  function init() {
+     map = new OpenLayers.Map("map", {
+      controls : [ new OpenLayers.Control.PanZoomBar(),
+        new OpenLayers.Control.Navigation(),
+        new OpenLayers.Control.LayerSwitcher(),
+        new OpenLayers.Control.MousePosition(),
+        new OpenLayers.Control.Attribution(),
+        new OpenLayers.Control.OverviewMap() ],
+      maxExtent : new OpenLayers.Bounds(-20037508.34, -20037508.34, 20037508.34, 20037508.34),
+      numZoomLevels : 18,
+      maxResolution : 156543,
+      units : 'm',
+      projection : PROJECTION_MERC,
+      displayProjection : PROJECTION_4326
+    });
+
+    // OSM Layer
+    var osmLayer = new OpenLayers.Layer.OSM("OpenStreetMap");
+    map.addLayer(osmLayer);
+
+    // AKW Markers Layer
+    var size = new OpenLayers.Size(32, 37);
+    var offset = new OpenLayers.Pixel(-16, -35);
+    var icon = new OpenLayers.Icon('powerplant.png', size, offset);
+    var brunsbuettelLocation = new OpenLayers.LonLat(9.201667, 53.891667).transform(PROJECTION_4326, PROJECTION_MERC);
+    var markerAkwBrunsbuettel = new OpenLayers.Marker(brunsbuettelLocation, icon);
+    markerAkwBrunsbuettel.events.register('mousedown',
+      markerAkwBrunsbuettel, function(evt) {
+        alert(this.icon.url);
+        OpenLayers.Event.stop(evt);
+      });
+
+    var akwMarkersLayer = new OpenLayers.Layer.Markers("AKW Marker Layer");
+    map.addLayer(akwMarkersLayer);
+    akwMarkersLayer.addMarker(markerAkwBrunsbuettel);
+
+    // AKW Text Layer
+    var akwTextLayer = new OpenLayers.Layer.Text("AKW Text Layer", {
+      location : "./akws.txt",
+      projection : PROJECTION_4326
+    });
+    map.addLayer(akwTextLayer);
+    
+    // AKW Vector Layer
+    var akwVectorLayer = new OpenLayers.Layer.Vector("AKW Vector Layer");
+    map.addLayer(akwVectorLayer);
+
+    var brokdorfPoint = new OpenLayers.Geometry.Point(9.344722, 53.850833).transform(PROJECTION_4326, PROJECTION_MERC);
+    var brokdorfAttributes = {title: "AKW Brokdorf", description: "Weitere Informationen: <a href='http://de.wikipedia.org/wiki/AKW_Brokdorf'>Wikipedia</a>"};
+    var brokdorfFeature = new OpenLayers.Feature.Vector(brokdorfPoint, brokdorfAttributes);
+    akwVectorLayer.addFeatures(brokdorfFeature);
+
+    var kruemmelPoint = new OpenLayers.Geometry.Point(10.408889, 53.41).transform(PROJECTION_4326, PROJECTION_MERC);
+    var kruemmelAttributes = {title: "AKW Krümmel", description: "Weitere Informationen: <a href='http://de.wikipedia.org/wiki/AKW_Kr%C3%BCmmel'>Wikipedia</a>"};
+    var stylesAkwImage = {externalGraphic: 'powerplant.png', graphicHeight: 37, graphicWidth: 32, graphicYOffset: -35, graphicXOffset: -16 };
+    var kruemmelFeature = new OpenLayers.Feature.Vector(kruemmelPoint, kruemmelAttributes, stylesAkwImage);
+    akwVectorLayer.addFeatures(kruemmelFeature);
+    
+    // Interaction; not needed for initial display.
+    selectControl = new OpenLayers.Control.SelectFeature(akwVectorLayer);
+    map.addControl(selectControl);
+    selectControl.activate();
+
+    akwVectorLayer.events.on({
+      'featureselected' : onFeatureSelect,
+      'featureunselected' : onFeatureUnselect
+    });
+
+    var center = new OpenLayers.LonLat(8.807357, 53.075813);
+    var centerAsMerc = center.transform(PROJECTION_4326, PROJECTION_MERC);
+    map.setCenter(centerAsMerc, 8);
+  }
+
+  // code of: http://docs.openlayers.org/library/overlays.html#displaying-popups
+
+  function onPopupClose(evt) {
+    // 'this' is the popup.
+    selectControl.unselect(this.feature);
+  }
+
+  function onFeatureSelect(evt) {
+    feature = evt.feature;
+    popup = new OpenLayers.Popup.FramedCloud("featurePopup",
+      feature.geometry.getBounds().getCenterLonLat(),
+        new OpenLayers.Size(100, 100), "<h2>"
+          + feature.attributes.title + "</h2>"
+          + feature.attributes.description, null, true,
+        onPopupClose);
+    feature.popup = popup;
+    popup.feature = feature;
+    map.addPopup(popup);
+  }
+
+  function onFeatureUnselect(evt) {
+    feature = evt.feature;
+    if (feature.popup) {
+      popup.feature = null;
+      map.removePopup(feature.popup);
+      feature.popup.destroy();
+      feature.popup = null;
+    }
+  }
+</script>
+
+<style type="text/css">
+html,body,#map {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+</style>
+
+</head>
+<body onload="init()">
+  <div id="map"></div>
+</body>
+</html>
